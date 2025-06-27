@@ -27,7 +27,7 @@ export const signUp = async (email: string, password: string, fullName: string) 
     password,
     options: {
       data: {
-        full_name: fullName,
+        full_name: fullName,  // Luck@y120751A
       },
     },
   });
