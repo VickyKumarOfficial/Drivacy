@@ -1,0 +1,94 @@
+Drivacy is a next-generation cab booking platform designed to prioritize user privacy, financial transparency, and empowerment. It utilizes a decentralized, AI-powered ecosystem to ensure secure and efficient ride-hailing without the risks of traditional centralized models. Key features include a zero-knowledge location-sharing system, blockchain-driven transactions, and a token-based economy to reward eco-friendly behaviors.
+Features
+
+Privacy and Security
+
+Zero-knowledge encrypted location matching for anonymous ride requests.
+AES-encrypted data storage and zk-SNARKs for privacy protection.
+Biometric authentication for secure high-value rides.
+Panic mode with automatic alerts to emergency contacts.
+
+Safety and Monitoring
+
+Real-time AI monitoring of driver behavior, speed, and route deviations.
+Trip sharing feature for trusted contacts.
+IoT-integrated smart helmets for added safety during bike rides.
+
+Transparent Pricing and Payments
+
+Live cost breakdown displaying driver share, platform fees, fuel costs, and taxes.
+Predictive pricing model using machine learning for optimal booking times.
+Multiple payment options including UPI, Razorpay, cards, cash, and crypto wallets.
+
+Token-Based Economy
+
+Earn RideCoins for each ride, which can be redeemed for discounts and upgrades.
+Profit-sharing mechanism for drivers based on platform usage.
+Carbon credits awarded for using electric vehicles.
+
+Sustainability and Social Impact
+
+Prioritization and discounts for electric/hybrid vehicle usage.
+Integration with carbon credit systems to encourage eco-responsible travel.
+
+Platform and Ecosystem
+
+Open API for third-party app integration and service enhancement.
+Driver marketplace for additional services like delivery and city tours.
+Live shopping integration during rides with destination delivery options.
+
+User Flow
+
+Users download and install the Drivacy app.
+Users create an account using biometric authentication or email/password.
+Users input their ride request (destination, ride type) while retaining location privacy.
+The system matches users with drivers using zero-knowledge proofs.
+Users receive a transparent cost breakdown before confirming the ride.
+Users can select their preferred payment method and confirm the ride.
+During the ride, users can monitor safety metrics and share their trip with trusted contacts.
+Upon completion, users earn RideCoins and can provide feedback.
+
+Design Guidelines
+
+Styling Guidelines:
+Typography: Poppins fonts for readability and a modern look.
+
+Page Layout:
+attractive and animated designs/animations (3D if no error occurs) with creative layout focusing on ease of navigation.
+Clear visibility of pricing, ride details, and safety features.
+
+Navigation Structure:
+Bottom navigation bar for Home, Ride History, Wallet, and Settings.
+Easy access to emergency features and help resources.
+
+Backend Structure
+
+Security Measures:
+Implement OAuth for user authentication.
+Regular security audits and vulnerability assessments.
+
+In-Scope and Out-of-Scope ItemsIn-Scope:
+
+Core features as listed above, including zero-knowledge location sharing and AI-powered safety monitoring.
+
+Out-of-Scope:
+
+Advanced ride analytics and reporting features.
+Integration with external ride-hailing platforms or services.
+Autonomous vehicle support in the initial launch phase.
+
+Code for the app should be scalable to modify it easily without big errors and flexible to add files & folders.
+
+For given the mobile app context, make it modern looking UI and appealing to the users.
+
+Make sure the buttons are functional with their respective tasks.
+Create a logo on the top left corner, app name - 'Drivacy' (Drive + Privacy).
+In the home page:
+Under the location (Pickup and where to?) add a suggestions section where small cards should be there to book more rides like: metro, bus, flight, train and rental vehciles.
+Under these suggestions add a coupon and offer cards which takes the full-width and displays each card for
+5-7 seconds and slide to next one.
+
+
+I want you to connect my application to supabase, with  the project name "Project Drivacy", which I've already created. Use this project to integrate user & app necessary info to make it dynamic in nature, into the supbase DB.
+
+Make sure to integrate important features 1st & make it consistent & complete process
