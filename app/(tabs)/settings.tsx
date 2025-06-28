@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal, TextInput, Alert, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { User, Bell, Shield, CreditCard, MapPin, CircleHelp as HelpCircle, Star, Share2, LogOut, ChevronRight, Lock } from 'lucide-react-native';
+import { User, Bell, Shield, CreditCard, MapPin, CircleHelp as HelpCircle, Star, Share2, LogOut, ChevronRight, Lock, Phone, AlertCircle } from 'lucide-react-native';
 import Header from '@/components/Header';
+import { useEmergencyContacts } from '@/contexts/EmergencyContactsContext';
 
 interface SettingItem {
   id: string;
@@ -15,8 +16,26 @@ interface SettingItem {
 }
 
 export default function SettingsScreen() {
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [locationSharingEnabled, setLocationSharingEnabled] = React.useState(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [locationSharingEnabled, setLocationSharingEnabled] = useState(false);
+  
+  // Use the emergency contacts context instead of local state
+  const [emergencyContactsModalVisible, setEmergencyContactsModalVisible] = useState(false);
+  const { contacts: emergencyContacts, addContact, removeContact } = useEmergencyContacts();
+  const [newContactName, setNewContactName] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
+
+  // Add new emergency contact
+  const handleAddContact = () => {
+    addContact(newContactName, newContactPhone);
+    setNewContactName('');
+    setNewContactPhone('');
+  };
+
+  // Close modal with validation
+  const handleCloseEmergencyContactsModal = () => {
+    setEmergencyContactsModalVisible(false);
+  };
 
   const settingsSections = [
     {
@@ -73,6 +92,14 @@ export default function SettingsScreen() {
           icon: CreditCard,
           type: 'navigate',
           onPress: () => console.log('Payment Methods'),
+        },
+        {
+          id: 'emergency',
+          title: 'Emergency Contacts',
+          subtitle: 'Set up SOS contacts',
+          icon: Phone,
+          type: 'navigate',
+          onPress: () => setEmergencyContactsModalVisible(true),
         },
         {
           id: 'security',
@@ -181,6 +208,67 @@ export default function SettingsScreen() {
           </View>
         ))}
 
+        {/* Emergency Contacts Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+          <View style={styles.sectionContent}>
+            {emergencyContacts.length === 0 ? (
+              <View style={styles.emptyContactsContainer}>
+                <Text style={styles.emptyContactsText}>No emergency contacts added yet</Text>
+              </View>
+            ) : (
+              emergencyContacts.map((contact, index) => (
+                <View key={index} style={[
+                  styles.settingItem, 
+                  index === emergencyContacts.length - 1 ? styles.lastSettingItem : {}
+                ]}>
+                  <View style={styles.settingLeft}>
+                    <View style={[styles.iconContainer, { 
+                      backgroundColor: index === 0 ? '#fee2e2' : '#f3f4f6'
+                    }]}>
+                      <Phone color={index === 0 ? '#ef4444' : '#6b7280'} size={20} />
+                    </View>
+                    <View style={styles.settingContent}>
+                      <Text style={styles.settingTitle}>{contact.name}</Text>
+                      <Text style={styles.settingSubtitle}>{contact.phone}</Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.settingRight}
+                    onPress={() => removeContact(index)}
+                    activeOpacity={0.7}
+                    disabled={index === 0 && contact.phone === '911'}
+                  >
+                    <Text style={{
+                      fontSize: 14, 
+                      color: index === 0 && contact.phone === '911' ? '#d1d5db' : '#ef4444', 
+                      fontFamily: 'Poppins-Medium'
+                    }}>
+                      Remove
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+          </View>
+
+          {/* Add Contact Button */}
+          <TouchableOpacity
+            style={{
+              backgroundColor: '#2563eb',
+              borderRadius: 12,
+              paddingVertical: 12,
+              alignItems: 'center',
+              marginHorizontal: 20,
+              marginVertical: 12
+            }}
+            onPress={() => setEmergencyContactsModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={{fontSize: 14, color: '#ffffff', fontFamily: 'Poppins-Medium'}}>+ Add Emergency Contact</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} activeOpacity={0.7}>
           <LogOut color="#ef4444" size={20} />
@@ -192,6 +280,86 @@ export default function SettingsScreen() {
           <Text style={styles.versionText}>Drivacy v1.0.0</Text>
           <Text style={styles.versionSubtext}>Privacy-first ride hailing</Text>
         </View>
+        
+        {/* Emergency Contacts Modal */}
+        <Modal
+          visible={emergencyContactsModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={handleCloseEmergencyContactsModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Emergency Contacts</Text>
+                <TouchableOpacity onPress={handleCloseEmergencyContactsModal}>
+                  <ChevronRight color="#6b7280" size={24} />
+                </TouchableOpacity>
+              </View>
+              
+              <Text style={styles.modalSubtitle}>
+                These contacts will be available during emergencies via the SOS button.
+              </Text>
+              
+              <FlatList
+                data={emergencyContacts}
+                keyExtractor={(item, index) => `contact-${index}`}
+                renderItem={({ item, index }) => (
+                  <View style={styles.contactItem}>
+                    <View>
+                      <Text style={styles.contactName}>{item.name}</Text>
+                      <Text style={styles.contactPhone}>{item.phone}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => removeContact(index)}
+                      disabled={index === 0 && item.phone === '911'}
+                    >
+                      <Text style={[
+                        styles.removeButton, 
+                        index === 0 && item.phone === '911' ? styles.disabledText : {}
+                      ]}>
+                        Remove
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                style={styles.contactsList}
+              />
+              
+              <View style={styles.addContactSection}>
+                <Text style={styles.sectionTitle}>Add New Contact</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Name"
+                    value={newContactName}
+                    onChangeText={setNewContactName}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Phone"
+                    value={newContactPhone}
+                    onChangeText={setNewContactPhone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+                <TouchableOpacity 
+                  style={styles.addButton}
+                  onPress={handleAddContact}
+                >
+                  <Text style={styles.addButtonText}>Add Contact</Text>
+                </TouchableOpacity>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={handleCloseEmergencyContactsModal}
+              >
+                <Text style={styles.closeButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </SafeAreaView>
   );
@@ -348,5 +516,131 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-Regular',
     color: '#9ca3af',
     marginTop: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Poppins-Bold',
+    color: '#1f2937',
+    flex: 1,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6b7280',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  contactInfo: {
+    flex: 1,
+  },
+  contactName: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#1f2937',
+  },
+  contactPhone: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6b7280',
+  },
+  removeButton: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#ef4444',
+  },
+  disabledText: {
+    color: '#d1d5db',
+  },
+  contactsList: {
+    paddingBottom: 16,
+  },
+  addContactSection: {
+    marginTop: 16,
+  },
+  inputRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  input: {
+    flex: 1,
+    height: 40,
+    borderColor: '#d1d5db',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#1f2937',
+  },
+  addButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#ffffff',
+  },
+  closeButton: {
+    marginTop: 16,
+    backgroundColor: '#6b7280',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#ffffff',
+  },
+  emptyContactsContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+  },
+  emptyContactsText: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#9ca3af',
+    textAlign: 'center',
+  },
+  lastSettingItem: {
+    borderBottomWidth: 0, // Remove border for last item
   },
 });

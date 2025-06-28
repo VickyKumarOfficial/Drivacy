@@ -1,9 +1,11 @@
 import React, { useRef, useState, useMemo, useCallback } from 'react';
-import { View, StyleSheet, Dimensions, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Dimensions, Text, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import { ArrowLeft } from 'lucide-react-native';
 import { LocationCoordinate } from '@/utils/locationService';
+import SOSButton from './SOSButton';
+import { useEmergencyContacts } from '@/contexts/EmergencyContactsContext';
 
 interface RideMapProps {
   pickup: LocationCoordinate;
@@ -24,6 +26,9 @@ const RideMapWithDirections = React.memo(({ pickup, destination, onBack }: RideM
     duration: '~12 mins',
     fare: '₹150-180'
   });
+  
+  // Get emergency contacts from context
+  const { contacts } = useEmergencyContacts();
 
   // Memoize coordinate calculations
   const mapData = useMemo(() => {
@@ -84,6 +89,22 @@ const RideMapWithDirections = React.memo(({ pickup, destination, onBack }: RideM
         <View style={styles.placeholder} />
       </View>
 
+      {/* SOS Button - Floating */}
+      <SOSButton 
+        contacts={contacts}
+        currentLocation={{
+          latitude: pickup.latitude,
+          longitude: pickup.longitude,
+          address: pickup.address
+        }}
+        rideInfo={{
+          driverName: "Michael Chen",
+          vehicleInfo: "Toyota Camry • KA-01-AB-1234", 
+          rideId: "RD12345"
+        }}
+        variant="floating"
+      />
+      
       {/* Loading overlay */}
       {!mapLoaded && (
         <View style={styles.loadingOverlay}>
@@ -150,33 +171,68 @@ const RideMapWithDirections = React.memo(({ pickup, destination, onBack }: RideM
         )}
       </MapView>
 
-      {/* Bottom Info Card */}
+      {/* Bottom Info Card with Enhanced UI - Now Scrollable */}
       <View style={styles.infoCard}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false} 
+          bounces={true} 
+          contentContainerStyle={styles.scrollContent}
+          persistentScrollbar={true}
+        >
+          {/* Route Header with Distance and Time Summary */}
+          <View style={styles.routeSummary}>
+            <View style={styles.routeSummaryLeft}>
+              <Text style={styles.routeDistance}>{routeInfo.distance}</Text>
+              <Text style={styles.routeDuration}>{routeInfo.duration}</Text>
+            </View>
+            <View style={styles.routeSummaryRight}>
+              <Text style={styles.fareEstimate}>Fare Estimate</Text>
+              <Text style={styles.fareAmount}>{routeInfo.fare}</Text>
+            </View>
+          </View>
+
+        {/* Location Details */}
         <View style={styles.routeInfo}>
           <View style={styles.locationItem}>
-            <View style={[styles.locationDot, { backgroundColor: '#10b981' }]} />
+            <View style={styles.locationDotContainer}>
+              <View style={[styles.locationDot, { backgroundColor: '#10b981' }]} />
+            </View>
             <Text style={styles.locationText} numberOfLines={1}>{pickup.name || pickup.address || 'Pickup location'}</Text>
           </View>
-          <View style={styles.routeLine} />
+          <View style={styles.routeLineContainer}>
+            <View style={styles.routeLine} />
+          </View>
           <View style={styles.locationItem}>
-            <View style={[styles.locationDot, { backgroundColor: '#ef4444' }]} />
+            <View style={styles.locationDotContainer}>
+              <View style={[styles.locationDot, { backgroundColor: '#ef4444' }]} />
+            </View>
             <Text style={styles.locationText} numberOfLines={1}>{destination.name || destination.address || 'Destination'}</Text>
           </View>
         </View>
         
-        <View style={styles.rideDetails}>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Time</Text>
-            <Text style={styles.detailValue}>{routeInfo.duration}</Text>
+        {/* Ride Options */}
+        <View style={styles.rideOptions}>
+          <View style={styles.rideOptionItem}>
+            <View style={[styles.rideOptionIcon, { backgroundColor: '#e0f2fe' }]}>
+              <Text style={styles.rideOptionEmoji}>🚗</Text>
+            </View>
+            <Text style={styles.rideOptionLabel}>Standard</Text>
+            <Text style={styles.rideOptionPrice}>{routeInfo.fare}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Distance</Text>
-            <Text style={styles.detailValue}>{routeInfo.distance}</Text>
+          <View style={[styles.rideOptionItem, styles.activeRideOption]}>
+            <View style={[styles.rideOptionIcon, { backgroundColor: '#dcfce7' }]}>
+              <Text style={styles.rideOptionEmoji}>🔋</Text>
+            </View>
+            <Text style={[styles.rideOptionLabel, styles.activeRideOptionText]}>Electric</Text>
+            <Text style={[styles.rideOptionPrice, styles.activeRideOptionText]}>{routeInfo.fare.replace('₹', '₹') + ' + 🌿'}</Text>
           </View>
-          <View style={styles.detailItem}>
-            <Text style={styles.detailLabel}>Fare</Text>
-            <Text style={styles.detailValue}>{routeInfo.fare}</Text>
-          </View>
+          {/* <View style={styles.rideOptionItem}>
+            <View style={[styles.rideOptionIcon, { backgroundColor: '#f3e8ff' }]}>
+              <Text style={styles.rideOptionEmoji}>✨</Text>
+            </View>
+            <Text style={styles.rideOptionLabel}>Premium</Text>
+            <Text style={styles.rideOptionPrice}>{'₹' + parseInt(routeInfo.fare.replace(/[^\d]/g, '')) * 1.5}</Text>
+          </View> */}
         </View>
 
         {routeError && (
@@ -187,8 +243,11 @@ const RideMapWithDirections = React.memo(({ pickup, destination, onBack }: RideM
           </View>
         )}
 
+        </ScrollView>
+        
+        {/* Book button outside ScrollView to ensure it's always visible */}
         <TouchableOpacity style={styles.bookButton} activeOpacity={0.8}>
-          <Text style={styles.bookButtonText}>Book Ride</Text>
+          <Text style={styles.bookButtonText}>Book Electric Ride</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -272,14 +331,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 20,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
-    maxHeight: height * 0.35,
+    maxHeight: height * 0.45, // Increased height
+    paddingTop: 5, // Added padding at top to make space for scroll indicator
+    paddingBottom: 80, // Extra space for the book button
+    paddingHorizontal: 20,
+  },
+  scrollContent: {
+    paddingVertical: 15,
   },
   routeInfo: {
     marginBottom: 16,
@@ -301,13 +364,123 @@ const styles = StyleSheet.create({
     color: '#374151',
     flex: 1,
   },
+  // Enhanced Route UI
+  routeSummary: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  routeSummaryLeft: {
+    flexDirection: 'column',
+    flex: 1, // Take up available space
+  },
+  routeDistance: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#1f2937',
+    marginBottom: 2,
+  },
+  routeDuration: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#6b7280',
+  },
+  routeSummaryRight: {
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    backgroundColor: '#f0fdf4',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#dcfce7',
+  },
+  fareEstimate: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Medium',
+    color: '#10b981',
+    marginBottom: 2,
+    textTransform: 'uppercase',
+  },
+  fareAmount: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#059669',
+  },
+  locationDotContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#f9fafb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  routeLineContainer: {
+    alignItems: 'center',
+    marginLeft: 12,
+  },
   routeLine: {
     width: 2,
     height: 16,
     backgroundColor: '#d1d5db',
-    marginLeft: 4,
-    marginVertical: 2,
   },
+  rideOptions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    gap: 8,
+  },
+  rideOptionItem: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#f3f4f6',
+    minHeight: 110, // Ensure consistent height
+  },
+  activeRideOption: {
+    backgroundColor: '#f0fdf4',
+    borderColor: '#10b981',
+    borderWidth: 2,
+    transform: [{scale: 1.02}],
+    elevation: 3,
+    shadowColor: '#10b981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  rideOptionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  rideOptionEmoji: {
+    fontSize: 18,
+  },
+  rideOptionLabel: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
+    color: '#1f2937',
+    marginBottom: 4,
+  },
+  rideOptionPrice: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Bold',
+    color: '#1f2937',
+  },
+  activeRideOptionText: {
+    color: '#059669',
+  },
+  // Legacy styles kept for compatibility
   rideDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -332,10 +505,19 @@ const styles = StyleSheet.create({
     color: '#1f2937',
   },
   bookButton: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20, 
     backgroundColor: '#2563eb',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
+    shadowColor: '#1e40af',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   bookButtonText: {
     color: '#ffffff',

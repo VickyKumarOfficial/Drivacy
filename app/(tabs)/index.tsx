@@ -6,6 +6,8 @@ import SimpleLocationInput from '@/components/SimpleLocationInput';
 import TransportSuggestions from '@/components/TransportSuggestions';
 import OfferCarousel from '@/components/OfferCarousel';
 import RideMap from '@/components/RideMapWithDirections';
+import SOSButton from '@/components/SOSButton';
+import { useEmergencyContacts } from '@/contexts/EmergencyContactsContext';
 import { LocationCoordinate } from '@/utils/locationService';
 
 export default function HomeScreen() {
@@ -15,6 +17,9 @@ export default function HomeScreen() {
     destination: LocationCoordinate | null;
   }>({ pickup: null, destination: null });
   const [isMapLoading, setIsMapLoading] = useState(false);
+  
+  // Get emergency contacts from context
+  const { contacts } = useEmergencyContacts();
 
   const handleLocationSelect = (pickup: string, destination: string) => {
     console.log('Ride requested:', { pickup, destination });
@@ -59,6 +64,14 @@ export default function HomeScreen() {
           />
           <TransportSuggestions onTransportSelect={handleTransportSelect} />
           <OfferCarousel />
+          
+          {/* SOS Button */}
+          <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 24, alignItems: 'center' }}>
+            <SOSButton 
+              contacts={contacts}
+              variant="normal"
+            />
+          </View>
         </View>
       </KeyboardAvoidingView>
       {/* Map Modal */}
@@ -89,5 +102,5 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 20,
-  },
+  }
 });
