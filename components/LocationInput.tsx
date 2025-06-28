@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { MapPin, Navigation, Clock } from 'lucide-react-native';
 
 interface LocationInputProps {
   onLocationSelect: (pickup: string, destination: string) => void;
+  onShowMap?: (pickup: string, destination: string) => void;
+  isMapLoading?: boolean;
 }
 
-export default function LocationInput({ onLocationSelect }: LocationInputProps) {
+export default function LocationInput({ onLocationSelect, onShowMap, isMapLoading }: LocationInputProps) {
   const [pickup, setPickup] = useState('');
   const [destination, setDestination] = useState('');
   const [focusedInput, setFocusedInput] = useState<'pickup' | 'destination' | null>(null);
@@ -64,6 +66,25 @@ export default function LocationInput({ onLocationSelect }: LocationInputProps) 
           <Text style={styles.swapText}>⇅</Text>
         </TouchableOpacity>
       </View>
+      
+      {/* Show Route Button */}
+      {pickup && destination && (
+        <TouchableOpacity 
+          style={[styles.showRouteButton, isMapLoading && styles.showRouteButtonDisabled]} 
+          onPress={() => onShowMap?.(pickup, destination)}
+          activeOpacity={0.8}
+          disabled={isMapLoading}
+        >
+          {isMapLoading ? (
+            <ActivityIndicator color="#ffffff" size={16} />
+          ) : (
+            <MapPin color="#ffffff" size={16} />
+          )}
+          <Text style={styles.showRouteText}>
+            {isMapLoading ? 'Loading...' : 'Show Route'}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -146,5 +167,24 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#6b7280',
     fontWeight: 'bold',
+  },
+  showRouteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
+  showRouteButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  showRouteText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontFamily: 'Poppins-SemiBold',
+    marginLeft: 8,
   },
 });
