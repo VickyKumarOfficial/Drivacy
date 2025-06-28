@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Modal, TextInput, Alert, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { User, Bell, Shield, CreditCard, MapPin, CircleHelp as HelpCircle, Star, Share2, LogOut, ChevronRight, Lock } from 'lucide-react-native';
 import Header from '@/components/Header';
@@ -17,6 +17,41 @@ interface SettingItem {
 export default function SettingsScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
   const [locationSharingEnabled, setLocationSharingEnabled] = React.useState(false);
+
+  // Emergency Contacts State
+  const [sosModalVisible, setSosModalVisible] = React.useState(false);
+  const [emergencyContacts, setEmergencyContacts] = React.useState([
+    // Example: { name: 'Jane Doe', phone: '+91 98765 43211' }
+  ]);
+  const [newContactName, setNewContactName] = React.useState('');
+  const [newContactPhone, setNewContactPhone] = React.useState('');
+
+  // Add new contact
+  const addContact = () => {
+    if (!newContactName.trim() || !newContactPhone.trim()) {
+      Alert.alert('Error', 'Please enter both name and phone number');
+      return;
+    }
+    setEmergencyContacts([...emergencyContacts, { name: newContactName.trim(), phone: newContactPhone.trim() }]);
+    setNewContactName('');
+    setNewContactPhone('');
+  };
+
+  // Remove contact
+  const removeContact = (index: number) => {
+    const updated = [...emergencyContacts];
+    updated.splice(index, 1);
+    setEmergencyContacts(updated);
+  };
+
+  // Handle closing modal
+  const handleCloseModal = () => {
+    if (emergencyContacts.length === 0) {
+      Alert.alert('At least one contact required', 'Please add at least one emergency contact.');
+      return;
+    }
+    setSosModalVisible(false);
+  };
 
   const settingsSections = [
     {
@@ -156,7 +191,6 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Settings" showNotifications={false} />
-
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* User Profile Card */}
         <TouchableOpacity style={styles.profileCard} activeOpacity={0.7}>
@@ -171,6 +205,65 @@ export default function SettingsScreen() {
           <ChevronRight color="#9ca3af" size={20} />
         </TouchableOpacity>
 
+        {/* Panic Mode (SOS) Button */}
+        <TouchableOpacity style={styles.sosButton} activeOpacity={0.8} onPress={() => setSosModalVisible(true)}>
+          <Text style={styles.sosButtonText}>Panic Mode (SOS)</Text>
+        </TouchableOpacity>
+{/* sosButton */}
+        {/* Emergency Contacts Modal */}
+        <Modal
+          visible={sosModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={handleCloseModal}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <Text style={styles.modalTitle}>Emergency Contacts</Text>
+              <FlatList
+                data={emergencyContacts}
+                keyExtractor={(_, idx) => idx.toString()}
+                renderItem={({ item, index }) => (
+                  <View style={styles.contactItem}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.contactName}>{item.name}</Text>
+                      <Text style={styles.contactPhone}>{item.phone}</Text>
+                    </View>
+                    {emergencyContacts.length > 1 && (
+                      <TouchableOpacity onPress={() => removeContact(index)}>
+                        <Text style={styles.removeContact}>Remove</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+                ListEmptyComponent={<Text style={styles.emptyContacts}>No contacts added yet.</Text>}
+              />
+              <View style={styles.addContactRow}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Name"
+                  value={newContactName}
+                  onChangeText={setNewContactName}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Phone"
+                  value={newContactPhone}
+                  onChangeText={setNewContactPhone}
+                  keyboardType="phone-pad"
+                />
+                <TouchableOpacity style={styles.addButton} onPress={addContact}>
+                  <Text style={styles.addButtonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.saveButton} onPress={handleCloseModal}>
+                <Text style={styles.saveButtonText}>Save & Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+
+{/* sosButton */}
         {/* Settings Sections */}
         {settingsSections.map((section) => (
           <View key={section.title} style={styles.section}>
@@ -251,6 +344,117 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
     color: '#6b7280',
+  },
+
+/* sosButton */
+  sosButton: {
+    backgroundColor: '#ef4444',
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  sosButtonText: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Bold',
+    color: '#ffffff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '90%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'stretch',
+    elevation: 4,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: 'Poppins-Bold',
+    color: '#1f2937',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  contactName: {
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+    color: '#1f2937',
+  },
+  contactPhone: {
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    color: '#6b7280',
+  },
+  removeContact: {
+    color: '#ef4444',
+    fontFamily: 'Poppins-Medium',
+    marginLeft: 12,
+  },
+  emptyContacts: {
+    textAlign: 'center',
+    color: '#9ca3af',
+    fontFamily: 'Poppins-Regular',
+    marginVertical: 12,
+  },
+  addContactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 8,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 14,
+    color: '#1f2937',
+    backgroundColor: '#f9fafb',
+  },
+  addButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+  addButtonText: {
+    color: '#fff',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 14,
+  },
+  saveButton: {
+    backgroundColor: '#2563eb',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  saveButtonText: {
+    color: '#fff',
+    fontFamily: 'Poppins-Bold',
+    fontSize: 16,
   },
   section: {
     marginHorizontal: 20,
